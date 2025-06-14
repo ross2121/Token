@@ -141,7 +141,7 @@ pub mod token {
 pub struct Initialize<'info> {
     #[account(mut)]
     pub signer:Signer<'info>,
-    #[account(init,space=8+TokenLottery::INIT_SPACE,payer=signer,seeds=[b"token",signer.key().as_ref()],
+    #[account(init,space=8+TokenLottery::INIT_SPACE,payer=signer,seeds=[b"token_lottery",signer.key().as_ref()],
 bump)]
 pub token_lottery:Account<'info,TokenLottery>,
 pub system_program:Program<'info,System>
@@ -152,7 +152,7 @@ pub struct Buyticket<'info>{
     #[account(mut)]
     pub payer:Signer<'info>,
     #[account(mut,
-    seeds=[b"token_lottery".as_ref()],
+    seeds=[b"token_lottery".as_ref(),payer.key().as_ref()],
     bump=token_lottery.bump
     )]
     pub token_lottery:Account<'info,TokenLottery>,
