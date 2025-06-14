@@ -19,9 +19,6 @@ pub const  URI:&str="https://www.edepotindia.com/wp-content/uploads/2018/12/west
 #[program]
 pub mod token {
     use std::any::Any;
-
-  
-
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>,start_time:u64,end:u64,price:u64) -> Result<()> {
