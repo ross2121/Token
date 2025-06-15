@@ -6,7 +6,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount}
 };
 use anchor_spl::{metadata::{create_master_edition_v3, create_metadata_accounts_v3, mpl_token_metadata::{ types::{CollectionDetails, Creator, DataV2}}, set_and_verify_sized_collection_item, sign_metadata, CreateMasterEditionV3, CreateMetadataAccountsV3, SetAndVerifySizedCollectionItem, SignMetadata}, token_2022::{mint_to, MintTo}};
-
+use switchboard_on_demand::RandomnessAccountData;
 declare_id!("Gek9iUND53ww6PB5jxWa5XB5ndnS9QZuVzrszwPGJtWp");
 #[constant]
 pub const NAME: &str="TOKEN LOTTERY TICKET";
@@ -19,6 +19,8 @@ pub const  URI:&str="https://www.edepotindia.com/wp-content/uploads/2018/12/west
 #[program]
 pub mod token {
     use std::any::Any;
+    
+
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>,start_time:u64,end:u64,price:u64) -> Result<()> {
@@ -88,6 +90,19 @@ pub mod token {
         ctx.accounts.token_lottery.total_tickets+=1;
         Ok(())
     }
+    pub fn commit_randomness(ctx:Context<CommitRandomness>)->Result<()>{
+        let clock:Clock=Clock::get()?;
+        let token_lottery=&mut ctx.accounts.token_lottery;
+        if(ctx.accounts.payer.key()!=token_lottery.authority){
+            return Err(ErrorCode::Notauthorized.into());
+        }
+        let randomness_data=RandomnessAccountData::parse(ctx.accounts.randomness_account.data.borrow()).unwrap();
+        if(randomness_data.seed_slot!=clock.slot-1){
+            return Err(ErrorCode:: RandomnessAlredyRevealed.into());
+        }
+        token_lottery.randomness_account=ctx.accounts.randomness_account.key();
+        Ok(())
+    }
     
     pub fn initialize_lottery(ctx: Context<InitializeToken>) -> Result<()> {
           let signer_seeds:&[&[&[u8]]]=&[&[b"collectionmint",&[ctx.bumps.collection_mint],]];
@@ -141,7 +156,7 @@ pub mod token {
 pub struct Initialize<'info> {
     #[account(mut)]
     pub signer:Signer<'info>,
-    #[account(init,space=8+TokenLottery::INIT_SPACE,payer=signer,seeds=[b"token_lottery",signer.key().as_ref()],
+    #[account(init,space=8+TokenLottery::INIT_SPACE,payer=signer,seeds=[b"token_lottery"],
 bump)]
 pub token_lottery:Account<'info,TokenLottery>,
 pub system_program:Program<'info,System>
@@ -152,7 +167,7 @@ pub struct Buyticket<'info>{
     #[account(mut)]
     pub payer:Signer<'info>,
     #[account(mut,
-    seeds=[b"token_lottery".as_ref(),payer.key().as_ref()],
+    seeds=[b"token_lottery".as_ref()],
     bump=token_lottery.bump
     )]
     pub token_lottery:Account<'info,TokenLottery>,
@@ -235,6 +250,18 @@ pub struct  TokenLottery{
      
 }
 #[derive(Accounts)]
+pub struct  CommitRandomness<'info>{
+    #[account(mut)]
+    pub  payer:Signer<'info>,
+    #[account(mut,
+        seeds=[b"token_lottery".as_ref()],
+        bump=token_lottery.bump)]
+        pub token_lottery:Account<'info,TokenLottery>,
+/// CHECK:This account is checked by the SWitchboard smart contract
+        pub randomness_account:UncheckedAccount<'info>
+
+}
+#[derive(Accounts)]
 
 pub struct InitializeToken<'info> {
     #[account(mut)]
@@ -290,5 +317,9 @@ pub struct InitializeToken<'info> {
 #[error_code]
 pub enum  ErrorCode {
     #[msg("Lootery is not open")]
-    LotteryNotOpen
+    LotteryNotOpen,
+    #[msg("Not authorized")]
+    Notauthorized,
+    #[msg("Randomness alredy revealed")]
+    RandomnessAlredyRevealed
 }

@@ -7,7 +7,8 @@
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
-    "@solana/spl-token": "^0.4.13"
+    "@solana/spl-token": "^0.4.13",
+    "@switchboard-xyz/on-demand": "^2.10.2"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

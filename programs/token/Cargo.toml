@@ -21,4 +21,5 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 anchor-lang = "0.31.1"
 anchor-spl = {version="0.31.1", features=["metadata", "idl-build"]}
 spl-token = "8.0.0"
+switchboard-on-demand = "0.4.0"
 
